@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:voice_todo_app/models/task.dart';
 import 'package:voice_todo_app/models/voice_command.dart';
 import 'package:voice_todo_app/services/connectivity_service.dart';
@@ -45,6 +46,7 @@ class SyncService {
   }
 
   Future<void> syncAll() async {
+    if (kIsWeb) return; // Disable sync on web
     if (_isSyncing || _connectivityService.currentStatus == NetworkStatus.offline) {
       return;
     }
@@ -94,6 +96,7 @@ class SyncService {
 
   // Sync a single task when it's modified
   Future<void> syncTask(Task task) async {
+    if (kIsWeb) return; // Disable sync on web
     if (_connectivityService.currentStatus == NetworkStatus.offline) {
       // Save locally as not synced
       final unSyncedTask = task.copyWith(isSynced: false);
@@ -119,6 +122,7 @@ class SyncService {
   Future<void> queueVoiceCommand(VoiceCommand command) async {
     // Always save locally first
     await _databaseService.saveCommand(command);
+    if (kIsWeb) return; // Disable sync on web
     
     // If online, try to sync immediately
     if (_connectivityService.currentStatus == NetworkStatus.online) {

@@ -9,7 +9,7 @@ enum NetworkStatus {
 class ConnectivityService {
   final Connectivity _connectivity = Connectivity();
   final _controller = StreamController<NetworkStatus>.broadcast();
-  StreamSubscription<ConnectivityResult>? _subscription;
+  StreamSubscription<List<ConnectivityResult>>? _subscription;
   NetworkStatus _lastStatus = NetworkStatus.offline;
 
   Stream<NetworkStatus> get onStatusChange => _controller.stream;
@@ -25,23 +25,25 @@ class ConnectivityService {
     _updateStatus(result);
   }
 
-  void _updateStatus(ConnectivityResult result) {
-    NetworkStatus status;
-    
-    switch (result) {
-      case ConnectivityResult.mobile:
-      case ConnectivityResult.wifi:
-      case ConnectivityResult.ethernet:
-      case ConnectivityResult.vpn:
-        status = NetworkStatus.online;
-        break;
-      case ConnectivityResult.bluetooth:
-      case ConnectivityResult.none:
-      default:
-        status = NetworkStatus.offline;
-        break;
+  void _updateStatus(List<ConnectivityResult> results) {
+    // If the list is empty, assume offline
+    if (results.isEmpty) {
+      _setNetworkStatus(NetworkStatus.offline);
+      return;
     }
-    
+
+    // Check if any connectivity option indicates online status
+    bool hasConnection = results.any((result) => 
+      result == ConnectivityResult.mobile || 
+      result == ConnectivityResult.wifi ||
+      result == ConnectivityResult.ethernet ||
+      result == ConnectivityResult.vpn
+    );
+
+    _setNetworkStatus(hasConnection ? NetworkStatus.online : NetworkStatus.offline);
+  }
+
+  void _setNetworkStatus(NetworkStatus status) {
     if (status != _lastStatus) {
       _lastStatus = status;
       _controller.add(status);

@@ -19,7 +19,7 @@ dependencies:
   flutter_riverpod: ^2.5.1
   
   # Voice Recognition & Text-to-Speech
-  speech_to_text: ^6.6.2
+  speech_to_text: ^6.6.0
   flutter_tts: ^3.8.5
   
   # Offline Storage
@@ -34,7 +34,7 @@ dependencies:
   cloud_firestore: ^4.15.10
   
   # Connectivity
-  connectivity_plus: ^5.0.2
+  connectivity_plus: ^6.1.4
   
   # UI Components
   flutter_slidable: ^3.1.1
@@ -103,6 +103,15 @@ flutter:
     - assets/animations/
     - assets/images/
 
-  fonts:
-    - family: Poppins
-      fonts:
+  # Remove the Poppins font configuration since we don't have the files
+  # We'll use system fonts instead
+  # fonts:
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: assets/fonts/Poppins-Regular.ttf
+  #       - asset: assets/fonts/Poppins-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Poppins-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Poppins-Bold.ttf
+  #         weight: 700

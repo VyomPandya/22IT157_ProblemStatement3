@@ -1,8 +1,10 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
-import 'package:voice_todo_app/models/task.dart';
-import 'package:voice_todo_app/models/voice_command.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:voice_todo_app/models/task.dart' hide TaskAdapter;
+import 'package:voice_todo_app/models/voice_command.dart' hide VoiceCommandAdapter, CommandTypeAdapter;
+import 'package:voice_todo_app/models/adapters.dart';
 
 class DatabaseService {
   static const String _tasksBoxName = 'tasks';
@@ -11,14 +13,29 @@ class DatabaseService {
   static late Box<VoiceCommand> _commandsBox;
 
   static Future<void> initialize() async {
-    final appDocumentDir = await path_provider.getApplicationDocumentsDirectory();
-    final dbPath = path.join(appDocumentDir.path, 'hive_db');
+    // Initialize Hive differently for web and mobile
+    if (kIsWeb) {
+      // For web, we don't need a specific path
+      Hive.initFlutter();
+    } else {
+      // For mobile, use the application documents directory
+      final appDocumentDir = await path_provider.getApplicationDocumentsDirectory();
+      final dbPath = path.join(appDocumentDir.path, 'hive_db');
+      Hive.init(dbPath);
+    }
     
-    Hive.init(dbPath);
-    Hive.registerAdapter(TaskAdapter());
-    Hive.registerAdapter(VoiceCommandAdapter());
-    Hive.registerAdapter(CommandTypeAdapter());
+    // Register custom adapters only if they're not already registered
+    if (!Hive.isAdapterRegistered(0)) {
+      Hive.registerAdapter(TaskAdapter());
+    }
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(VoiceCommandAdapter());
+    }
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter(CommandTypeAdapter());
+    }
     
+    // Properly handle type safety
     _tasksBox = await Hive.openBox<Task>(_tasksBoxName);
     _commandsBox = await Hive.openBox<VoiceCommand>(_commandsBoxName);
   }
@@ -29,10 +46,13 @@ class DatabaseService {
   }
 
   Future<Task?> getTask(String id) async {
-    return _tasksBox.values.firstWhere(
-      (task) => task.id == id,
-      orElse: () => null as Task,
-    );
+    try {
+      return _tasksBox.values.firstWhere(
+        (task) => task.id == id,
+      );
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> saveTask(Task task) async {
@@ -59,14 +79,15 @@ class DatabaseService {
   }
 
   Future<void> markCommandAsProcessed(String id) async {
-    final command = _commandsBox.values.firstWhere(
-      (cmd) => cmd.id == id,
-      orElse: () => null as VoiceCommand,
-    );
-    
-    if (command != null) {
+    try {
+      final command = _commandsBox.values.firstWhere(
+        (cmd) => cmd.id == id,
+      );
+      
       command.isProcessed = true;
       await _commandsBox.put(id, command);
+    } catch (e) {
+      // Command not found
     }
   }
 

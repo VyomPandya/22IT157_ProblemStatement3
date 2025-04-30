@@ -109,10 +109,13 @@ class TaskService {
     }
 
     final normalizedTitle = title.toLowerCase().trim();
-    return _cachedTasks.firstWhere(
-      (task) => task.title.toLowerCase().contains(normalizedTitle),
-      orElse: () => null as Task,
-    );
+    try {
+      return _cachedTasks.firstWhere(
+        (task) => task.title.toLowerCase().contains(normalizedTitle),
+      );
+    } catch (e) {
+      return null;
+    }
   }
 
   void dispose() {

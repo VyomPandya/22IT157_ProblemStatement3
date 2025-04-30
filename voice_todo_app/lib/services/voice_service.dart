@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:voice_todo_app/models/voice_command.dart';
 import 'package:voice_todo_app/services/command_parser_service.dart';
@@ -41,6 +42,11 @@ class VoiceService {
     if (_isInitialized) return true;
 
     try {
+      // Check if running on web
+      if (kIsWeb) {
+        debugPrint('Speech recognition may have limited functionality on web');
+      }
+
       // Initialize speech to text
       bool speechAvailable = await _speechToText.initialize(
         onError: (error) => _handleError('Speech recognition error: $error'),
@@ -51,11 +57,21 @@ class VoiceService {
         },
       );
 
-      // Initialize text to speech
+      // Initialize text to speech with platform-specific settings
       await _flutterTts.setLanguage('en-US');
-      await _flutterTts.setSpeechRate(0.5);
-      await _flutterTts.setVolume(1.0);
-      await _flutterTts.setPitch(1.0);
+      
+      // Different settings for web vs mobile
+      if (kIsWeb) {
+        // Web-specific settings
+        await _flutterTts.setSpeechRate(0.7); // Web needs slightly higher rate
+        await _flutterTts.setVolume(1.0);
+        await _flutterTts.setPitch(1.0);
+      } else {
+        // Mobile settings
+        await _flutterTts.setSpeechRate(0.5);
+        await _flutterTts.setVolume(1.0);
+        await _flutterTts.setPitch(1.0);
+      }
       
       _flutterTts.setCompletionHandler(() {
         if (_status == VoiceServiceStatus.speaking) {
